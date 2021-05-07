@@ -1,18 +1,47 @@
 @import '~antd/dist/antd.css';
 
 .App {
-  text-align: center;
+  font-family: 'Courier New', Courier, monospace;
+  text-align: left;
+}
+
+.container {
+  padding: 0 5px;
+
 }
 
 .App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+  /*background-color: #1a2633;*/
+  background-color: #334d66;
+  height: 2rem;
+}
+
+.App-header h1 {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #fff;
+}
+
+.App-main {
+  /*background-color: #282c34;*/
+  background-color: #7fbfff;
+  height: calc(100vh - 3.5rem);
+  /*
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  */
+  font-size: 1em;
+  color: #334d66;
+}
+
+.App-footer {
+  background-color: #334d66;
+  height: 1.5rem;
+  font-weight: bold;
+  color: #fff;
+  font-size: 1em;
 }
 
 .App-link {
