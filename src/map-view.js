@@ -3,6 +3,7 @@ import * as d3 from 'd3';
 import * as topojson from 'topojson-client'
 
 import {
+  message,
   Row,
   Col,
   Select,
@@ -15,13 +16,15 @@ const { Option } = Select
 
 const file = config.topofile
 const { dates } = config
-// const file = '/data/japan_topo.json'
+
+const delay = 0
 
 export default function BarChart( props ) {
   const scale = 1500;
 
   const _svg = useRef()
 
+  const [ _loading, setLoading ] = useState( false )
   const [ _prefData, setPrefData ] = useState( null )
   const [ _bedData, setBedData ] = useState( [] )
   const [ _dateUpdated, setDateUpdated ] = useState(dates[0])
@@ -31,8 +34,10 @@ export default function BarChart( props ) {
 
   useEffect( () => {
     ( async () => {
+      setLoading( true )
+
+      if( !!delay ) await new Promise( r => setTimeout(r, delay * 2) )
       const topo = await fetch( file ).then( res => res.json() )
-      console.log( topo )
       const prefData = topojson.feature( topo, 'japan' )
 
       setPrefData( prefData )
@@ -41,19 +46,29 @@ export default function BarChart( props ) {
 
   useEffect(() => {
     ( async () => {
+      setLoading( true )
+
+      if( !!delay ) await new Promise( r => setTimeout(r, delay) )
       const date = _dateUpdated.split("-").join("")
       const apiBed = `/data/beds_${date}.json`
       const bedData = await fetch( apiBed ).then( res => res.json() )
-      console.log( bedData )
 
       setBedData( bedData )
     })()
   }, [ _dateUpdated ])
 
+  useEffect(() => {
+    if( _loading ) {
+      message.loading('loading data...', 0)
+    } else {
+      message.destroy()
+    }
+  }, [_loading])
+
   useEffect( () => {
     if( !_prefData || _bedData.length === 0 ) return 
 
-    console.log( _target )
+    setLoading( false )
 
     const svg = d3.select(_svg.current)
     const width = _svg.current.scrollWidth
@@ -77,7 +92,6 @@ export default function BarChart( props ) {
       .style("stroke-width", 0.5)
       .style("fill", d => {
         const id = d.properties.id
-        console.log( id )
         const [ bedData ] = _bedData.filter( item => item.prefectureId === id )
         const ratio = bedData[_target]
         const num = Math.ceil(255 * ( 1 - ratio / 100 ) )
@@ -161,7 +175,7 @@ export default function BarChart( props ) {
               </div>
               <Select defaultValue={dates[0]} style={{width: "100%"}} onChange={ setDateUpdated }>
                 { dates.map( (date, idx) => (
-                  <Option value={date}>{date}</Option>
+                  <Option key={idx} value={date}>{date}</Option>
                 ))}
               </Select>
             </div>
