@@ -1,5 +1,11 @@
 # map-covid-japan
 
+Map based visualization site of COVID-19 in Japan. This site is using open data provided by government in Japan. For details about data, see [refs](#refs).
+
+![image](./public/og_image.png)
+
+https://map-covid.kokutele.com/
+
 ## how to dev
 
 ```
