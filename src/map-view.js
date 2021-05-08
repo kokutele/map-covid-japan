@@ -9,11 +9,13 @@ import {
   Table
 } from 'antd'
 
+import * as config from './config'
+
 const { Option } = Select
 
-const file = '/data/japan_topo.json'
-const apiBed = '/data/beds.json'
-// from https://github.com/dataofjapan/land
+const file = config.topofile
+const { dates } = config
+// const file = '/data/japan_topo.json'
 
 export default function BarChart( props ) {
   const scale = 1500;
@@ -22,10 +24,10 @@ export default function BarChart( props ) {
 
   const [ _prefData, setPrefData ] = useState( null )
   const [ _bedData, setBedData ] = useState( [] )
-  const [ _dateUpdated /*, setDateUpdated */ ] = useState('2021-04-28')
+  const [ _dateUpdated, setDateUpdated ] = useState(dates[0])
   const [ _tableData, setTableData ] = useState( [] )
   const [ _columns, setColumns ] = useState( [] )
-  const [ _target , setTarget ] = useState( 'heavyBedUsedRatio' )
+  const [ _target , setTarget ] = useState( 'ratioInpatient' )
 
   useEffect( () => {
     ( async () => {
@@ -39,22 +41,14 @@ export default function BarChart( props ) {
 
   useEffect(() => {
     ( async () => {
+      const date = _dateUpdated.split("-").join("")
+      const apiBed = `/data/beds_${date}.json`
       const bedData = await fetch( apiBed ).then( res => res.json() )
       console.log( bedData )
-        // .map( item => {
-        //   const id = parseInt(item['都道府県番号'])
-        //   return { ...item, id }
-        // })
 
-      setBedData( bedData.map( item => {
-        const id = parseInt(item['都道府県番号'])
-        const bedUsedRatio = parseInt(item['入院患者病床使用率'].slice(0, -1)) / 100
-        const heavyBedUsedRatio = parseInt(item['重症患者病床使用率'].slice(0, -1)) / 100
-        const roomUsedRatio = parseInt(item['宿泊療養施設居室使用率'].slice(0, -1)) / 100
-        return { ...item, id, bedUsedRatio, heavyBedUsedRatio, roomUsedRatio }
-      }) )
+      setBedData( bedData )
     })()
-  }, [])
+  }, [ _dateUpdated ])
 
   useEffect( () => {
     if( !_prefData || _bedData.length === 0 ) return 
@@ -84,11 +78,9 @@ export default function BarChart( props ) {
       .style("fill", d => {
         const id = d.properties.id
         console.log( id )
-        const [ bedData ] = _bedData.filter( item => item.id === id )
-        console.log( bedData )
-        const num = Math.ceil(255 * ( 1 - bedData[_target] ) )
-        // const num = Math.ceil(255 * ( 1 - bedData.bedUsedRatio ) )
-        // const num = Math.ceil(255 * ( 1 - bedData.roomUsedRatio ) )
+        const [ bedData ] = _bedData.filter( item => item.prefectureId === id )
+        const ratio = bedData[_target]
+        const num = Math.ceil(255 * ( 1 - ratio / 100 ) )
         return `rgb(255, ${num}, ${num})`
       });
 
@@ -107,18 +99,18 @@ export default function BarChart( props ) {
     map.call(drag);
 
     const tableData = _bedData.map( ( item, idx ) => ({
-      ...item,
       key: idx,
-      heavyBedUsedRatio: `${(item.heavyBedUsedRatio * 100).toFixed(0)}%`,
-      bedUsedRatio: `${(item.bedUsedRatio * 100).toFixed(0)}%`,
-      roomUsedRatio: `${(item.roomUsedRatio * 100).toFixed(0)}%`,
+      name: item.name,
+      ratioHeavyInpatient: `${(item.ratioHeavyInpatient)}%`,
+      ratioInpatient: `${(item.ratioInpatient)}%`,
+      ratioAccomInpatient: `${(item.ratioAccomInpatient)}%`,
     }))
 
     const columns = [
       { 
         title: '都道府県名',
-        dataIndex: '都道府県名',
-        key: '都道府県名'
+        dataIndex: 'name',
+        key: 'name'
       },
       {
         title: '値',
@@ -129,18 +121,6 @@ export default function BarChart( props ) {
 
     setTableData( tableData )
     setColumns( columns )
-
-    // console.log( _bedData )
-    //             <Option value="heavyBedUsedRatio">重傷者病床使用率</Option>
-    //             <Option value="bedUsedRatio">入院患者病床使用率</Option>
-    //             <Option value="roomUsedRatio">宿泊療養施設居室使用率</Option>
-    //           </Select>
-    //           <ul>
-    //           { _bedData.map( item => {
-    //             const ratio = `${(item[ _target ] * 100).toFixed(0)}%`
-
-    //               <li>{item['都道府県名']}: {ratio}</li>
- 
   }, [_prefData, _bedData, _target])
 
   return (
@@ -165,15 +145,25 @@ export default function BarChart( props ) {
               overflowY: 'auto',
               background: '#66b3ff'
             }}>
-              <div style={{ textAlign: "right"}}>
-                更新日: <span style={{fontWeight: "bold"}}>{_dateUpdated}</span>
-              </div>
-              <Select defaultValue="heavyBedUsedRatio" style={{width: "100%"}} onChange={setTarget}>
-                <Option value="heavyBedUsedRatio">重傷者病床使用率</Option>
-                <Option value="bedUsedRatio">入院患者病床使用率</Option>
-                <Option value="roomUsedRatio">宿泊療養施設居室使用率</Option>
+              <Select defaultValue="ratioInpatient" style={{width: "100%"}} onChange={setTarget}>
+                <Option value="ratioInpatient">入院患者病床使用率</Option>
+                <Option value="ratioHeavyInpatient">重傷者病床使用率</Option>
+                <Option value="ratioAccomInpatient">宿泊療養施設居室使用率</Option>
               </Select>
               <Table size="small" dataSource={_tableData} columns={_columns} />
+              <div style={{ 
+                borderLeft: "5px solid orange",
+                paddingLeft: "6px",
+                textAlign: "leff", 
+                marginTop: "1em" 
+              }}>
+                更新日:
+              </div>
+              <Select defaultValue={dates[0]} style={{width: "100%"}} onChange={ setDateUpdated }>
+                { dates.map( (date, idx) => (
+                  <Option value={date}>{date}</Option>
+                ))}
+              </Select>
             </div>
         </Col>
       </Row>
