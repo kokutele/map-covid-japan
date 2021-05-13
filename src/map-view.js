@@ -140,7 +140,7 @@ export default function BarChart( props ) {
   return (
     <div className="MapView" style={{height: "100%"}}>
       <Row style={{height: "100%"}}>
-        <Col span={18}>
+        <Col span={18} style={{height: "100%"}}>
           <svg
             ref={elem => _svg.current = elem }
             style={{
