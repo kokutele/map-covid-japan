@@ -10,8 +10,13 @@ if( !filename ) {
   exit(-1)
 }
 
+const date = parseInt(filename.match(/\d{8}/))
+const out = `beds_${date}.json`
+
 try {
   const workSheets = xlsx.parse(`${__dirname}/${filename}`) //20210428.xls`)
+
+  let ratioInpatient, ratioAccomInpatient, ratioHeavyInpatient
 
   const beds = workSheets[0].data.filter( item => {
     return (
@@ -21,15 +26,29 @@ try {
     && item[1] === undefined 
     && !!item[2]
   )}).map( (item, idx) => {
-    const ratioInpatient = typeof item[7] === 'number' ?
-      item[7] :
-      parseInt( item[7].match(/(\d+)/)[0] )
-    const ratioHeavyInpatient = typeof item[12] === 'number' ?
-      item[12] :
-      parseInt( item[12].match(/(\d+)/)[0] )
-    const ratioAccomInpatient = typeof item[17] === 'number' ?
-      item[17] :
-      parseInt( item[17].match(/(\d+)/)[0] )
+    if( date < 20210602 ) {
+      ratioInpatient = typeof item[7] === 'number' ?
+        item[7] :
+        parseInt( item[7].match(/(\d+)/)[0] )
+      ratioHeavyInpatient = typeof item[12] === 'number' ?
+        item[12] :
+        parseInt( item[12].match(/(\d+)/)[0] )
+      ratioAccomInpatient = typeof item[17] === 'number' ?
+        item[17] :
+        parseInt( item[17].match(/(\d+)/)[0] )
+    } else {
+      ratioInpatient = typeof item[9] === 'number' ?
+        item[9] :
+        parseInt( item[9].match(/(\d+)/)[0] )
+      ratioHeavyInpatient = typeof item[16] === 'number' ?
+        item[16] :
+        parseInt( item[16].match(/(\d+)/)[0] )
+      ratioAccomInpatient = typeof item[21] === 'number' ?
+        item[21] :
+        parseInt( item[21].match(/(\d+)/)[0] )
+ 
+
+    }
 
     return {
       prefectureId: idx+1,
@@ -50,7 +69,8 @@ try {
     }
   })
 
-  console.log( JSON.stringify(beds, null, 2) )
+  const json = JSON.stringify(beds, null, 2)
+  fs.writeFileSync( `${__dirname}/${out}`, json )
 } catch( err ) {
   console.error( err.message )
   exit(-1)
