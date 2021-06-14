@@ -2,6 +2,7 @@ export const topofile = '/data/japan_topo.json'
 // src https://github.com/dataofjapan/land
 
 export const dates = [
+  '2021-06-09',
   '2021-06-02',
   '2021-05-26',
   '2021-05-19',
